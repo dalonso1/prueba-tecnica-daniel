@@ -24,7 +24,6 @@ import com.capgemini.test.code.dto.request.CreateUserRequest;
 import com.capgemini.test.code.exception.UserValidationException;
 import com.capgemini.test.code.repository.UserRepository;
 
-import feign.Feign;
 import feign.FeignException;
 
 @ExtendWith (MockitoExtension.class)
