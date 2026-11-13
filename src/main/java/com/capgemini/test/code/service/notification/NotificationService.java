@@ -28,6 +28,7 @@ public class NotificationService {
         
         NotificationRequest request = new NotificationRequest(
             email, 
+            null,
             USER_SAVED_MESSAGE
         );
 
@@ -37,6 +38,7 @@ public class NotificationService {
     private void sendSms(String phone) {
         
         NotificationRequest request = new NotificationRequest(
+            null,
             phone, 
             USER_SAVED_MESSAGE
         );

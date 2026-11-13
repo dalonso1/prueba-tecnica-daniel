@@ -146,11 +146,11 @@ curl -i http://localhost:8080/rooms/1/users/3
 ```json
 {
   "id": 3,
-  "name": "Daniel",
-  "email": "daniel@example.com",
-  "phone": "677998899",
+  "name": "Pedro",
+  "email": "pedro@email.com",
+  "phone": "611223344",
   "rol": "admin",
-  "dni": "12345678A",
+  "dni": "87654321X",
   "roomId": 1
 }
 ```

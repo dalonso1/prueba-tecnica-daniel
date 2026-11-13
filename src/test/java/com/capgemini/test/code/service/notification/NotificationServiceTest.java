@@ -41,7 +41,8 @@ public class NotificationServiceTest {
 
         NotificationRequest request = captor.getValue();
 
-        assertEquals(email, request.getRecipient());
+        assertEquals(email, request.getEmail());
+        assertEquals(null, request.getPhone());
         assertEquals("usuario guardado", request.getMessage());
 
         verify(notificationClient, never()).sendSms(any());
@@ -63,7 +64,8 @@ public class NotificationServiceTest {
 
         NotificationRequest request = captor.getValue();
 
-        assertEquals(phone, request.getRecipient());
+        assertEquals(phone, request.getPhone());
+        assertEquals(null, request.getEmail());
         assertEquals("usuario guardado", request.getMessage());
         
         verify(notificationClient, never()).sendEmail(any());
