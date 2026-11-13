@@ -1,175 +1,313 @@
-# Capgemini-Test
+# Capgemini Test — API de gestión de usuarios y salas
 
-## Prerrequisitos
+Solución de una prueba técnica desarrollada con **Java 17 y Spring Boot 3.2.0**.
 
-Asegúrese de tener instalados los siguientes componentes antes de ejecutar el proyecto:
+La aplicación permite crear usuarios asociados a una sala y consultar sus datos. Durante la creación, valida el DNI mediante una API externa simulada y envía una notificación según el rol del usuario.
 
-- Java 17
+## 1. Tecnologías utilizadas
+
+- **Java 17** y **Spring Boot 3.2.0**
+- **Maven** para la gestión de dependencias y compilación.
+- **Spring Web** para desarrollar los endpoints REST.
+- **Spring Data JPA** para la persistencia.
+- **PostgreSQL** como base de datos relacional.
+- **Flyway** para gestionar las migraciones.
+- **OpenFeign** para la comunicación con servicios externos.
+- **MockServer** para simular las APIs externas.
+- **Docker Compose** para levantar la infraestructura.
+- **JUnit 5, Mockito y MockMvc** para las pruebas automatizadas.
+- **Lombok** para reducir código repetitivo.
+
+## 2. Requisitos previos
+
+Para ejecutar el proyecto es necesario disponer de:
+
+- JDK 17
 - Maven
+- Docker y Docker Compose
 - Git
-- Docker
 
----
+**Importante:** el proyecto está configurado para Java 17. Si tienes varios JDK instalados, comprueba que Maven utiliza Java 17 ejecutando:
 
-## Ejecución del Docker para tener la infraestructura necesaria
+```bash
+java -version
+mvn -version
+```
 
-1. Clone el repositorio:
-   bash
-   git clone <url-del-repositorio>
-   
-2. Navegue a la carpeta docker:
-   bash
-   cd docker
-   
-3. Levante los contenedores con Docker Compose:
-   bash
-   docker-compose up
-   
+## 3. Instalación y ejecución
 
-### Contenedores del Docker
+### 3.1. Clonar el repositorio
 
-- *PostgreSQL:* Base de datos.
-- *Mock-server:* API expuesta en el puerto 1080.
+```bash
+git clone https://github.com/dalonso1/prueba-tecnica-daniel.git
+cd prueba-tecnica-daniel
+```
 
----
+### 3.2. Levantar la infraestructura
 
-## APIs Expuestas en el Mock-server
+Desde la raíz del proyecto:
 
-### 1. API check-dni
-- *Método:* PATCH
-- *URL:* http://localhost:1080/check-dni
-- *Body de la petición:*
-  json
-  {
-    "dni": "<dni>"
-  }
-  
-- *Respuestas:*
-  - *OK:* Código HTTP 200 para cualquier DNI.
-  - *KO:* Código HTTP 409 si el DNI es 99999999w.
+```bash
+cd docker
+docker compose up -d
+docker compose ps
+cd ..
+```
 
----
+Docker Compose inicia los siguientes servicios:
 
-### 2. API notification
-#### Email
-- *Método:* POST
-- *URL:* http://localhost:1080/email
-- *Body de la petición:*
-  json
-  {
-    "email": "<email>",
-    "message": "<msg>"
-  }
-  
-- *Respuesta:*
-  - *OK:* Código HTTP 200.
+| Servicio | Puerto | Descripción |
+|---|---|---|
+| PostgreSQL | 5432 | Base de datos de la aplicación |
+| MockServer | 1080 | Simulación de APIs externas |
 
-#### SMS
-- *Método:* POST
-- *URL:* http://localhost:1080/sms
-- *Body de la petición:*
-  json
-  {
-    "phone": "<phone>",
-    "message": "<msg>"
-  }
-  
-- *Respuesta:*
-  - *OK:* Código HTTP 200.
+Los contenedores deben estar disponibles antes de arrancar la aplicación.
 
----
+### 3.3. Ejecutar las pruebas
 
-## Contexto
+Desde la raíz del proyecto:
 
-La aplicación debe gestionar salas y usuarios bajo las siguientes condiciones:
+```bash
+mvn clean test
+```
 
-- Cada sala tiene un ID único (long incremental).
-- Una sala puede contener N usuarios.
-- Un usuario puede estar en una única sala.
-- Al guardar el usuario en la sala, se valida su DNI contra una API externa.
-- Almacena el usuario en la base de datos y notifica según su rol.
-- Devuelve el ID del usuario almacenado.
+Este comando compila el proyecto y ejecuta las pruebas automatizadas.
 
----
+### 3.4. Arrancar Spring Boot
 
-## Requisitos
+```bash
+mvn spring-boot:run
+```
 
-### Validaciones:
-1. *Nombre:* No debe contener más de 6 caracteres.
-2. *Email:* Debe contener un @ y un ..
-3. *Rol:* Sólo puede ser admin o superadmin.
-4. Si el usuario ya existe (por email), se debe lanzar una excepción.
-5. Validar el DNI contra la API externa del mock-server.
+Una vez iniciado, el servicio REST estará disponible en:
 
-### Notificaciones:
-- *Admin:* Notificación por email con el mensaje: "usuario guardado".
-- *Superadmin:* Notificación por SMS con el mensaje: "usuario guardado".
+`http://localhost:8080`
 
-### Respuesta esperada:
-- *Retornar el ID generado.*
+### 3.5. Detener la infraestructura
 
----
+Detén Spring Boot con `Ctrl+C` y, desde la carpeta `docker`, ejecuta:
 
-## Métodos a Implementar
+```bash
+docker compose down
+```
 
-### 1. Crear Usuario
-- *Método:* POST
-- *Descripción:* Guarda un usuario en la sala 1 y retorna su ID.
-- *Ejemplo de JSON a guardar:*
-  json
-  {
-    "name": "pablo",
-    "email": "email@email.com",
-    "phone": "677998899",
+## 4. Endpoints REST
+
+### 4.1. Crear usuario
+
+**Método:** `POST`
+
+**Endpoint:** `/rooms/{roomId}/users`
+
+Permite crear un usuario asociado a una sala existente.
+
+Ejemplo de petición:
+
+```bash
+curl -i -X POST http://localhost:8080/rooms/1/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Pedro",
+    "email": "pedro.prueba@example.com",
+    "phone": "611223344",
     "rol": "admin",
-    "dni": "23454234W"
-  }
-  
-- *Respuestas:*
-  - *OK:* 
-    - Código HTTP 201 Created
-    - Body:
-      json
-      {
-        "id": "<id>"
-      }
-      
-  - *KO:* 
-    - Código HTTP 409 Conflict
-    - Body:
-      json
-      {
-        "code": 409,
-        "message": "error validation <email | userName | dni>"
-      }
-      
+    "dni": "87654321X"
+  }'
+```
 
-### 2. Obtener Usuario
-- *Método:* GET
-- *Descripción:* Obtiene un usuario basado en su ID dentro de la sala 1.
+**Respuesta correcta: HTTP 201 Created**
 
----
+```json
+{
+  "id": "3"
+}
+```
 
-## Condiciones Opcionales
+El identificador generado puede variar según los datos existentes en la base de datos.
 
-1. *Escalabilidad:* La aplicación podrá escalar para manejar diferentes contextos (pagos, pedidos, etc.).
-2. *Capacidad:* La aplicación podrá procesar desde una hasta millones de peticiones (no es necesario implementar Kubernetes).
+**Nota:** si se repite la petición, es necesario utilizar datos únicos para evitar conflictos con usuarios existentes.
 
----
+### 4.2. Obtener usuario
 
-## Cosas que se Valoran
+**Método:** `GET`
 
-1. *Pruebas:*
-   - Unitarias.
-   - De integración.
-   - De aceptación.
-2. *Arquitectura e implementación.*
-3. *Uso de Spring y abstracción del framework.*
-4. *Patrones de diseño.*
+**Endpoint:** `/rooms/{roomId}/users/{userId}`
 
----
+Permite consultar un usuario perteneciente a una sala determinada.
 
-## Método de Entrega
+Ejemplo:
 
-- Subir el proyecto a un repositorio público personal.
-- Todos los commits deben estar realizados en la rama main.
+```bash
+curl -i http://localhost:8080/rooms/1/users/1
+```
+
+**Respuesta correcta: HTTP 200 OK**
+
+```json
+{
+  "id": 1,
+  "name": "Juan Pérez",
+  "email": "juan@example.com",
+  "phone": "600123456",
+  "rol": "ADMIN",
+  "dni": "12345678A",
+  "roomId": 1
+}
+```
+
+### 4.3. Gestión de errores
+
+La aplicación utiliza un manejador global de excepciones para devolver respuestas HTTP consistentes.
+
+| Código HTTP | Descripción |
+|---|---|
+| 200 OK | Usuario recuperado correctamente |
+| 201 Created | Usuario creado correctamente |
+| 404 Not Found | Sala o usuario inexistente |
+| 409 Conflict | Error de validación |
+
+Ejemplo de respuesta de validación:
+
+```json
+{
+  "code": 409,
+  "message": "error validation email"
+}
+```
+
+## 5. Validaciones de negocio
+
+Durante la creación de usuarios se comprueban las siguientes reglas:
+
+1. El nombre no puede estar vacío ni superar los 6 caracteres.
+2. El email debe contener `@` y `.`.
+3. El email no puede estar registrado previamente.
+4. El rol debe ser `admin` o `superadmin`.
+5. El DNI debe validarse mediante el servicio externo.
+
+Si alguna validación falla, se lanza la excepción correspondiente y se devuelve una respuesta HTTP de error.
+
+## 6. Integraciones externas
+
+La aplicación utiliza **OpenFeign** para comunicarse con las APIs simuladas mediante MockServer.
+
+### Validación del DNI
+
+**Método:** `PATCH`
+
+**Endpoint:** `/check-dni`
+
+El servicio comprueba la validez del DNI proporcionado.
+
+Según la configuración del MockServer:
+
+- HTTP 200: DNI aceptado.
+- HTTP 409: DNI rechazado (`99999999w`).
+
+### Notificaciones
+
+Después de guardar correctamente un usuario, se envía una notificación según su rol:
+
+| Rol | Método | Endpoint |
+|---|---|---|
+| admin | POST | `/email` |
+| superadmin | POST | `/sms` |
+
+El mensaje enviado es:
+
+`usuario guardado`
+
+## 7. Arquitectura del proyecto
+
+La aplicación sigue una arquitectura por capas que separa las responsabilidades.
+
+```text
+Petición HTTP
+      |
+      v
+   Controller
+      |
+      v
+    Service
+      |
+      +---- ValidationService
+      |           |
+      |           v
+      |       MockServer
+      |
+      +---- Repository
+      |           |
+      |           v
+      |       PostgreSQL
+      |
+      +---- NotificationService
+                  |
+                  v
+              MockServer
+```
+
+### Responsabilidades principales
+
+**Controller:** recibe las peticiones HTTP y devuelve las respuestas correspondientes.
+
+**Service:** implementa la lógica de negocio y coordina las operaciones.
+
+**Repository:** proporciona acceso a los datos mediante Spring Data JPA.
+
+**DTO:** define las estructuras de entrada y salida de la API.
+
+**GlobalExceptionHandler:** centraliza el tratamiento de excepciones.
+
+**Feign Clients:** encapsulan la comunicación con los servicios externos.
+
+**Flyway:** gestiona las migraciones y la inicialización de la base de datos.
+
+## 8. Pruebas automatizadas
+
+Se han implementado **35 pruebas automatizadas** utilizando JUnit 5, Mockito y MockMvc.
+
+Las pruebas cubren:
+
+- Validaciones de usuarios.
+- Comprobación de usuarios existentes.
+- Integración simulada con el servicio de validación de DNI.
+- Notificaciones por email y SMS.
+- Creación y recuperación de usuarios.
+- Gestión de excepciones.
+- Respuestas HTTP de los controladores.
+- Arranque del contexto de Spring Boot.
+
+Para ejecutarlas:
+
+```bash
+mvn clean test
+```
+
+**Resultado verificado durante el desarrollo:**
+
+```text
+Tests run: 35
+Failures: 0
+Errors: 0
+Skipped: 0
+
+BUILD SUCCESS
+```
+
+También se han realizado pruebas manuales de los endpoints REST contra PostgreSQL y MockServer mediante peticiones HTTP reales.
+
+## 9. Resumen de los requisitos de la prueba técnica
+
+La prueba solicita implementar una aplicación que gestione salas y usuarios.
+
+Cada sala debe disponer de un identificador único y puede contener múltiples usuarios. Cada usuario pertenece a una única sala.
+
+La creación de usuarios debe incluir validaciones, comprobación del DNI mediante una API externa, persistencia en base de datos y notificación según el rol.
+
+También se requiere recuperar los datos de un usuario dentro de una sala determinada.
+
+Entre los aspectos valorados se encuentran la calidad de la implementación, la arquitectura, las pruebas automatizadas, el uso de Spring y los patrones de diseño.
+
+## 10. Entrega
+
+El proyecto debe entregarse mediante un repositorio público personal, con los commits realizados en la rama `main`.
