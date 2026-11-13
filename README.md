@@ -108,7 +108,7 @@ curl -i -X POST http://localhost:8080/rooms/1/users \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Pedro",
-    "email": "pedro.prueba@example.com",
+    "email": "pedro@email.com",
     "phone": "611223344",
     "rol": "admin",
     "dni": "87654321X"
@@ -138,18 +138,18 @@ Permite consultar un usuario perteneciente a una sala determinada.
 Ejemplo:
 
 ```bash
-curl -i http://localhost:8080/rooms/1/users/1
+curl -i http://localhost:8080/rooms/1/users/3
 ```
 
 **Respuesta correcta: HTTP 200 OK**
 
 ```json
 {
-  "id": 1,
-  "name": "Juan Pérez",
-  "email": "juan@example.com",
-  "phone": "600123456",
-  "rol": "ADMIN",
+  "id": 3,
+  "name": "Daniel",
+  "email": "daniel@example.com",
+  "phone": "677998899",
+  "rol": "admin",
   "dni": "12345678A",
   "roomId": 1
 }
