@@ -3,6 +3,7 @@ package com.capgemini.test.code.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,9 +19,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.capgemini.test.code.dto.request.CreateUserRequest;
 import com.capgemini.test.code.dto.response.CreateUserResponse;
+import com.capgemini.test.code.dto.response.UserResponse;
 import com.capgemini.test.code.entity.Room;
 import com.capgemini.test.code.entity.User;
 import com.capgemini.test.code.exception.RoomNotFoundException;
+import com.capgemini.test.code.exception.UserNotFoundException;
+import com.capgemini.test.code.exception.UserValidationException;
 import com.capgemini.test.code.repository.RoomRepository;
 import com.capgemini.test.code.repository.UserRepository;
 import com.capgemini.test.code.service.notification.NotificationService;
@@ -114,6 +118,106 @@ public class UserServiceTest {
             "admin", 
             "daniel@email.com",
             "677998899"
+        );
+    }
+
+    @Test 
+    void shouldNotSaveUserWhenValidationFails() {
+
+        Long roomId = 1L;
+
+        CreateUserRequest request = new CreateUserRequest();
+        request.setName("Daniel");
+        request.setEmail("invalid-email");
+
+        Room room = new Room();
+        room.setId(roomId);
+
+        when(roomRepository.findById(roomId))
+            .thenReturn(Optional.of(room));
+        
+        doThrow(new UserValidationException("email"))
+            .when(userValidationService)
+            .validate(request);
+        
+            assertThrows(
+                UserValidationException.class, 
+                () -> userService.createUser(roomId, request)
+            );
+
+        verify(userValidationService).validate(request);
+
+        verifyNoInteractions(
+            userRepository,
+            notificationService
+        );
+    }
+
+    @Test 
+    void shouldReturnUserWhenExistsInRoom() {
+
+        Long roomId = 1L;
+        Long userId = 3L;
+
+        Room room = new Room();
+        room.setId(roomId);
+        room.setName("Sala 1");
+
+        User user = new User();
+        user.setId(userId);
+        user.setName("Daniel");
+        user.setEmail("daniel@email.com");
+        user.setPhone("677998899");
+        user.setRole("admin");
+        user.setDni("12345678A");
+        user.setRoom(room);
+
+        when(userRepository.findByIdAndRoomId(userId, roomId))
+            .thenReturn(Optional.of(user));
+
+        UserResponse response = userService.getUser(roomId, userId);
+
+        assertEquals(userId, response.getId());
+        assertEquals("Daniel", response.getName());
+        assertEquals("daniel@email.com", response.getEmail());
+        assertEquals("677998899", response.getPhone());
+        assertEquals("admin", response.getRol());
+        assertEquals("12345678A", response.getDni());
+        assertEquals(roomId, response.getRoomId());
+
+        verify(userRepository).findByIdAndRoomId(userId, roomId);
+        verifyNoInteractions(
+            roomRepository,
+            userValidationService,
+            notificationService
+        );
+    }
+
+    @Test 
+    void shouldThrowExceptionWhenUserDoesNotExistsInRoom() {
+
+        Long roomId = 1L;
+        Long userId = 999L;
+
+        when(userRepository.findByIdAndRoomId(userId, roomId))
+            .thenReturn(Optional.empty());
+        
+        UserNotFoundException exception = assertThrows(
+            UserNotFoundException.class, 
+            () -> userService.getUser(roomId, userId)
+        );
+
+        assertEquals(
+            "User 999 not found in room 1", 
+            exception.getMessage()
+        );
+
+        verify(userRepository).findByIdAndRoomId(userId, roomId);
+
+        verifyNoInteractions(
+            roomRepository,
+            userValidationService,
+            notificationService
         );
     }
 }

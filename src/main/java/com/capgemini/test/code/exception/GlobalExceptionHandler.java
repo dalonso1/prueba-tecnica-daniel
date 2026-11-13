@@ -12,7 +12,8 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler (UserValidationException.class)
     public ResponseEntity<ErrorResponse> handleUserValidationException(
-        UserValidationException exception) {
+            UserValidationException exception) {
+            
             ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 exception.getMessage()
@@ -24,11 +25,25 @@ public class GlobalExceptionHandler {
         }
 
     @ExceptionHandler (RoomNotFoundException.class)
-    public  ResponseEntity<ErrorResponse> handleRoomNotFoundException(
-        RoomNotFoundException exception) {
+    public ResponseEntity<ErrorResponse> handleRoomNotFoundException(
+            RoomNotFoundException exception) {
         
         ErrorResponse error = new ErrorResponse(
             HttpStatus.NOT_FOUND.value(),
+            exception.getMessage()
+        );
+
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(error);
+    }
+
+    @ExceptionHandler (UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(
+            UserNotFoundException exception) {
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.NOT_FOUND.value(), 
             exception.getMessage()
         );
 
